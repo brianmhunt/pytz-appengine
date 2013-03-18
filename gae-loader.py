@@ -12,6 +12,10 @@ This is all based on the helpful gae-pytz project, here:
 
     https://code.google.com/p/gae-pytz/
 """
+import logging
+
+# easy test to make sure we are running the appengine version
+APPENGINE_PYTZ = True
 
 # Put pytz into its own ndb namespace, so we avoid conflicts
 NDB_NAMESPACE = '.pytz'
@@ -39,10 +43,8 @@ class namespace_of(object):
     def __exit__(self, type, value, traceback):
         namespace_manager.set_namespace(self.orig_ns)
 
-zoneinfo_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
-    'zoneinfo.zip'))
 
-class Zoneinfo(ndb.model):
+class Zoneinfo(ndb.Model):
     """A model containing the zone info data
     """
     data = ndb.BlobProperty(compressed=True)
@@ -53,26 +55,67 @@ def init_zoneinfo():
 
     This must be called before the AppengineTimezoneLoader will work.
     """
+    import os
     from zipfile import ZipFile
     zoneobjs = []
 
+    zoneinfo_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
+      'zoneinfo.zip'))
+
     with namespace_of(NDB_NAMESPACE):
-        with open(zoneinfo_path) as zf:
-            for zf in zf.filelist:
-                key = ndb.Key('Zoneinfo', zf.filename)
-                zobj = Zoneinfo(key=key, data=zf.read())
-                zoneobjs.append(zobj.put_async())
+        with ZipFile(zoneinfo_path) as zf:
+            for zfi in zf.filelist:
+                key = ndb.Key('Zoneinfo', zfi.filename)
+                zobj = Zoneinfo(key=key, data=zf.read(zfi))
+                zoneobjs.append(zobj)
+
+        logging.info("Adding %d timezones to the pytz-appengine database" %
+            len(zoneobjs)
+            )
 
         ndb.put_multi(zoneobjs)
 
-def open_resource(self, name):
+def open_resource(name):
     """Load the object from the datastore"""
     from cStringIO import StringIO
     with namespace_of(NDB_NAMESPACE):
-        return StringIO(ndb.Key('Zoneinfo', name).get().data)
+      try:
+        data = ndb.Key('Zoneinfo', name).get().data
+      except AttributeError:
+        # missing zone info
+        logging.exception("Requested zone '%s' is not in the database." % name)
+        raise
+    return StringIO(data)
 
-def resource_exists(self, name):
-    """Return true if the given resource exists"""
-    with namespace_of(NDB_NAMESPACE):
-        return ndb.Key('Zoneinfo', name).get()
+def resource_exists(name):
+    """Return true if the given timezone resource exists.
+    Since we are loading the whole PyTZ database, this should always be true
+    """
+    return True
 
+def setup_module():
+    """Set up tests (used by e.g. nosetests) for the module - loaded once"""
+    from google.appengine.ext import testbed
+    global _appengine_testbed
+    tb = testbed.Testbed()
+    tb.activate()
+    tb.setup_env()
+    tb.init_datastore_v3_stub()
+    tb.init_memcache_stub()
+
+    _appengine_testbed = tb
+
+    # add the zones to the database
+    init_zoneinfo()
+
+
+def teardown_module():
+    """Any clean-up after each test"""
+    global _appengine_testbed
+    _appengine_testbed.deactivate()
+
+#
+# >>>>>>>>>>>>>
+# >>>>>>>>>>>>>     end pytz-appengine augmentation
+# >>>>>>>>>>>>>
+#

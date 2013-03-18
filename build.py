@@ -3,6 +3,7 @@
 Download and patch the latest version of pytz
 """
 import os
+import shutil
 import argparse
 
 LATEST_OLSON = "2013b"
@@ -34,6 +35,7 @@ def compile(args):
 
     source = os.path.basename(SRC_TEMPLATE.format(args.olson))
     build_dir = args.build
+    tests_dir = os.path.join(build_dir, 'tests')
     zone_file = os.path.join(build_dir, "zoneinfo.zip")
 
     print "Recreating pytz for appengine from %s into %s" % (source, build_dir)
@@ -41,16 +43,21 @@ def compile(args):
     if not os.path.exists(build_dir):
         os.mkdir(build_dir)
 
+    if not os.path.exists(tests_dir):
+        os.mkdir(tests_dir)
+
     with ZipFile(source, 'r') as zf:
 
         # copy the source
-        for zip_file_obj in (zfi for zfi in zf.filelist if "/pytz/" in
-                zfi.filename and zfi.filename.endswith(".py")):
-
+        for zip_file_obj in (zfi for zfi in zf.filelist 
+                if "/pytz/" in zfi.filename 
+                and zfi.filename.endswith(".py")):
             filename = zip_file_obj.filename # full path in the zip
 
-            out_filename = "%s/%s" % (build_dir,
-                    filename[filename.find('/pytz/') + 6:])
+            if 'test_' in filename:
+                out_filename = '%s/%s' % (tests_dir, os.path.basename(filename))
+            else:
+                out_filename = "%s/%s" % (build_dir, os.path.basename(filename))
 
             if not os.path.exists(os.path.dirname(out_filename)):
                 os.mkdir(os.path.dirname(out_filename))
@@ -70,13 +77,34 @@ def compile(args):
                 # pytz-2013b/pytz/zoneinfo/America/Eastern
                 # becoems America/Eastern in our zoneinfo.zip
                 out_filename = os.path.relpath(zip_file_obj.filename, prefix)
-                print "Writing %s to %s" % (out_filename, zone_file)
+                # print "Writing %s to %s" % (out_filename, zone_file)
                 out_zones.writestr(out_filename, zf.read(zip_file_obj))
+            print "Created %s and added %s timezones" % (zone_file,
+                    len(zonefiles))
 
     print "Files copied from %s to the %s directory" % (source,
             build_dir)
 
+    print "Augmenting %s/__init__.py with gae-loader.py" % build_dir
 
+    init_file = os.path.join(build_dir, "__init__.py")
+    loader_file = 'gae-loader.py'
+
+    with file(init_file, 'r') as original:
+        original_init = original.read()
+
+    # rename open_resource and resource_exists, since we are hacking our own
+    original_init = original_init.replace("def open_resource(name):",
+        "def __open_resource(name):")
+    original_init = original_init.replace("def resource_exists(name):",
+        "def __resource_exists(name):")
+
+    with open(init_file, "w") as init_out:
+        with open(loader_file) as loader_in:
+            init_out.write(loader_in.read())
+
+        # append the original __init__
+        init_out.write(original_init)
 
 
 def clean(args):
@@ -84,7 +112,6 @@ def clean(args):
     pytz/*
     pytz-*
     """
-    import shutil
     from glob import glob
 
     print "Removing pytz- and pytz/*"
@@ -98,7 +125,6 @@ def clean(args):
 
     print "rmtree %s" % args.build
     shutil.rmtree(args.build)
-
 
 
 
