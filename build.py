@@ -31,9 +31,7 @@ def compile(args):
 
     source = os.path.basename(SRC_TEMPLATE.format(args.olson))
     build_dir = args.build
-
-    # this is what needs to be copied over
-    SOURCES = ["pytz/.*\.py", "pytz/zoneinfo"]
+    zone_file = os.path.join(build_dir, "zoneinfo.zip")
 
     print "Recreating pytz for appengine from %s into %s" % (source, build_dir)
 
@@ -48,10 +46,47 @@ def compile(args):
             out_filename = "%s/%s" % (build_dir,
                     os.path.basename(zip_file_obj.filename))
             with open(out_filename, 'w') as outfile:
-                print "Writing %s" % out_filename
+                print "Copying %s" % out_filename
                 outfile.write(zf.read(zip_file_obj))
         
-        # copy the zoneinfo
+        # copy the zoneinfo to a new zip file
+        with ZipFile(zone_file, "w") as out_zones:
+            zonefiles = [zfi for zfi in zf.filelist if "/pytz/zoneinfo" in
+                    zfi.filename]
+            prefix = os.path.commonprefix([zfi.filename for zfi in zonefiles])
+            for zip_file_obj in zonefiles:
+                # the destination zip will contain only the contents of the
+                # zoneinfo directory e.g.
+                # pytz-2013b/pytz/zoneinfo/America/Eastern
+                # becoems America/Eastern in our zoneinfo.zip
+                out_filename = os.path.relpath(zip_file_obj.filename, prefix)
+                print "Writing %s to %s" % (out_filename, zone_file)
+                out_zones.writestr(out_filename, zf.read(zip_file_obj))
+
+    print "Files copied from pytz at %s to the %s directory" % (source,
+            build_dir)
+
+
+def clean(args):
+    """Erase all the compiled and downloaded documents, being
+    pytz/*
+    pytz-*
+    """
+    import shutil
+    import glob
+
+    print "Removing pytz- and pytz/*"
+    for filename in glob("./pytz-*.zip"):
+        print "unlink %s" % filename
+        os.unlink(filename)
+
+    for dirname in glob("./pytz-*"):
+        print "rmtree %s" % dirname
+        shutil.rmtree(dirname)
+
+    print "rmtree %s" % args.build
+    shutil.rmtree(args.build)
+
 
 
 
@@ -61,6 +96,7 @@ def compile(args):
 commands = dict(
         download=download,
         compile=compile,
+        clean=clean,
         )
 
 
