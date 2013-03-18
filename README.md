@@ -19,4 +19,21 @@ version.
 As well, instead of using the memcache version of gae-pytz, pytz-appengine will
 put the timezone information into the datastore with `ndb`.
 
+## Installation and usage
+
+To install clone the repository, then from the command line run
+
+    $ python build.py all
+
+This will create a directory `pytz`, which you can copy to your Google App
+Engine directory. This is a modified pytz module, that ought to work by storing
+the timezone information in ndb. 
+
+I have not created a PyPi package because it doesn't make sense in this
+context. One will never import anything directly from this package; it is
+essentially just a build script in python.
+
+Thoughts and feedback are welcome.
+
+
 
