@@ -13,7 +13,7 @@ This is all based on the helpful gae-pytz project, here:
     https://code.google.com/p/gae-pytz/
 """
 
-# Put pytz into its own namespace, so we avoid conflicts
+# Put pytz into its own ndb namespace, so we avoid conflicts
 NDB_NAMESPACE = '.pytz'
 
 from google.appengine.ext import ndb
@@ -50,6 +50,8 @@ class Zoneinfo(ndb.model):
 def init_zoneinfo():
     """
     Add each zone info to the datastore. This will overwrite existing zones.
+
+    This must be called before the AppengineTimezoneLoader will work.
     """
     from zipfile import ZipFile
     zoneobjs = []
@@ -63,16 +65,14 @@ def init_zoneinfo():
 
         ndb.put_multi(zoneobjs)
 
-class TimezoneLoader(object):
-    """A loader that that reads timezones using ZipFile."""
-    def open_resource(self, name):
-        """Load the object from the datastore"""
-        from cStringIO import StringIO
+def open_resource(self, name):
+    """Load the object from the datastore"""
+    from cStringIO import StringIO
+    with namespace_of(NDB_NAMESPACE):
         return StringIO(ndb.Key('Zoneinfo', name).get().data)
 
-    def resource_exists(self, name):
-        """Return true if the given resource exists"""
+def resource_exists(self, name):
+    """Return true if the given resource exists"""
+    with namespace_of(NDB_NAMESPACE):
         return ndb.Key('Zoneinfo', name).get()
-
-pytz.loader = TimezoneLoader()
 
