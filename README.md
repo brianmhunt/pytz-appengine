@@ -25,15 +25,23 @@ To install clone the repository, then from the command line run
 
     $ python build.py all
 
-This will create a directory `pytz`, which you can copy to your Google App
-Engine directory. This is a modified pytz module, that ought to work by storing
-the timezone information in ndb. 
+This downloads the latest canonical `pytz` packages from PyPi and augments them
+by adding the code necessary to run on Google App Engine.
+
+The build process creates a directory `pytz`, which you can copy to your Google
+App Engine directory. This is the augmented pytz module, that ought to work by
+storing the timezone information in ndb. 
 
 I have not created a PyPi package because it doesn't make sense in this
 context. One will never import anything directly from this package; it is
 essentially just a build script in python.
 
 Thoughts and feedback are welcome.
+
+## License
+
+This project may be coped and otherwise used pursuant to the included MIT
+License.
 
 
 
