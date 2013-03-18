@@ -46,8 +46,15 @@ def compile(args):
         # copy the source
         for zip_file_obj in (zfi for zfi in zf.filelist if "/pytz/" in
                 zfi.filename and zfi.filename.endswith(".py")):
+
+            filename = zip_file_obj.filename # full path in the zip
+
             out_filename = "%s/%s" % (build_dir,
-                    os.path.basename(zip_file_obj.filename))
+                    filename[filename.find('/pytz/') + 6:])
+
+            if not os.path.exists(os.path.dirname(out_filename)):
+                os.mkdir(os.path.dirname(out_filename))
+
             with open(out_filename, 'w') as outfile:
                 print "Copying %s" % out_filename
                 outfile.write(zf.read(zip_file_obj))
