@@ -1,7 +1,7 @@
 """
 The following is the Google App Engine loader for pytz.
 
-It is monkeypatched into pytz/__init__.py
+It is monkeypatched, prepending pytz/__init__.py
 
 Here are some helpful links discussing the problem:
 
@@ -12,7 +12,6 @@ This is all based on the helpful gae-pytz project, here:
 
     https://code.google.com/p/gae-pytz/
 """
-import logging
 
 # easy test to make sure we are running the appengine version
 APPENGINE_PYTZ = True
@@ -55,7 +54,7 @@ def init_zoneinfo():
 
     This must be called before the AppengineTimezoneLoader will work.
     """
-    import os
+    import os, logging
     from zipfile import ZipFile
     zoneobjs = []
 
@@ -77,14 +76,24 @@ def init_zoneinfo():
 
 def open_resource(name):
     """Load the object from the datastore"""
+    import logging
     from cStringIO import StringIO
     with namespace_of(NDB_NAMESPACE):
       try:
         data = ndb.Key('Zoneinfo', name).get().data
       except AttributeError:
-        # missing zone info
-        logging.exception("Requested zone '%s' is not in the database." % name)
-        raise
+        # Missing zone info; test for GMT - which would be there if the 
+        # Zoneinfo has been initialized.
+        if ndb.Key('Zoneinfo', 'GMT').get():
+          # the user asked for a zone that doesn't seem to exist.
+          logging.exception("Requested zone '%s' is not in the database." %
+              name)
+          raise
+
+        # we need to initialize the database
+        init_zoneinfo()
+        return open_resource(name)
+
     return StringIO(data)
 
 def resource_exists(name):
@@ -104,9 +113,6 @@ def setup_module():
     tb.init_memcache_stub()
 
     _appengine_testbed = tb
-
-    # add the zones to the database
-    init_zoneinfo()
 
 
 def teardown_module():

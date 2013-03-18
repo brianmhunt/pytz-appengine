@@ -11,6 +11,45 @@ LATEST_OLSON = "2013b"
 # TODO: Slurp the latest URL from the pypi downloads page
 SRC_TEMPLATE = "https://pypi.python.org/packages/source/p/pytz/pytz-{}.zip"
 
+DONE_TEXT = """
+    
+    pytz for Google App Engine has been compiled from {source}.
+
+    Testing
+    ~~~~~~~
+
+    You can test this with a test-runner such as `nosetests`. It is a good
+    idea to set the log-level to INFO or higher and turning on color, for
+    example by running
+
+       $ nosetests --rednose --logging-level=INFO
+
+    Installation
+    ~~~~~~~~~~~~
+
+    The appengine-optimized version has been put into `{build_dir}`.
+
+    You can install it by copying `{build_dir}` to your Google App Engine
+    project.
+
+    Usage
+    ~~~~~
+    
+    pytz should now work as it always has, but load the timezones from the ndb
+    datastore.
+
+    If you update this package in your Google App Engine installation you
+    can refresh the timezones by running `pytz.init_zoneinfo()` or
+    alternatively by running in Google App Engine:
+    
+       ndb.Key('Zoneinfo', 'GMT', namespace='.pytz').delete()
+       pytz.timezone('GMT')
+
+    This will cause the zoneinfo to be refreshed. Note that deleted timezones
+    will not be removed from the database (but they probably should).
+"""
+
+
 def download(args):
     "Get the latest pytz"
     import urllib
@@ -82,6 +121,9 @@ def compile(args):
             print "Created %s and added %s timezones" % (zone_file,
                     len(zonefiles))
 
+    print "Copying test file test_pytz_appengine.py to %s" % tests_dir
+    shutil.copy("test_pytz_appengine.py", tests_dir)
+
     print "Files copied from %s to the %s directory" % (source,
             build_dir)
 
@@ -106,6 +148,8 @@ def compile(args):
         # append the original __init__
         init_out.write(original_init)
 
+    print DONE_TEXT.format(source=source, build_dir=build_dir)
+
 
 def clean(args):
     """Erase all the compiled and downloaded documents, being
@@ -127,8 +171,13 @@ def clean(args):
     shutil.rmtree(args.build)
 
 
+def all(args):
+    "Download and compile."
+    download(args)
+    compile(args)
 
 commands = dict(
+        all=all,
         download=download,
         compile=compile,
         clean=clean,
