@@ -26,8 +26,11 @@ def download(args):
 
 def compile(args):
     """"Create a 'pytz' directory and create the appengine-compatible module.
+
+    Copy over the bare minimum Python files (pytz/*.py) and put the zonefiles
+    into a zip file.
     """
-    from zipfile import ZipFile
+    from zipfile import ZipFile, ZIP_DEFLATED
 
     source = os.path.basename(SRC_TEMPLATE.format(args.olson))
     build_dir = args.build
@@ -50,7 +53,7 @@ def compile(args):
                 outfile.write(zf.read(zip_file_obj))
         
         # copy the zoneinfo to a new zip file
-        with ZipFile(zone_file, "w") as out_zones:
+        with ZipFile(zone_file, "w", ZIP_DEFLATED) as out_zones:
             zonefiles = [zfi for zfi in zf.filelist if "/pytz/zoneinfo" in
                     zfi.filename]
             prefix = os.path.commonprefix([zfi.filename for zfi in zonefiles])
@@ -63,8 +66,10 @@ def compile(args):
                 print "Writing %s to %s" % (out_filename, zone_file)
                 out_zones.writestr(out_filename, zf.read(zip_file_obj))
 
-    print "Files copied from pytz at %s to the %s directory" % (source,
+    print "Files copied from %s to the %s directory" % (source,
             build_dir)
+
+
 
 
 def clean(args):
@@ -73,7 +78,7 @@ def clean(args):
     pytz-*
     """
     import shutil
-    import glob
+    from glob import glob
 
     print "Removing pytz- and pytz/*"
     for filename in glob("./pytz-*.zip"):
@@ -86,9 +91,6 @@ def clean(args):
 
     print "rmtree %s" % args.build
     shutil.rmtree(args.build)
-
-
-
 
 
 
