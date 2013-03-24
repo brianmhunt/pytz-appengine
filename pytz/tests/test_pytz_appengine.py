@@ -16,7 +16,7 @@ class pytzAppengineTest(unittest.TestCase):
 
     def test_zones(self):
         """Check that the models do what we expect"""
-        from pytz import NDB_NAMESPACE, Zoneinfo, namespace_of
+        from pytz import NDB_NAMESPACE, Zoneinfo
         from google.appengine.ext import ndb
 
         est = pytz.timezone('Canada/Eastern')
@@ -25,8 +25,7 @@ class pytzAppengineTest(unittest.TestCase):
 
         EXPECT_ZONES = 589 # this may change with each iteration
 
-        with namespace_of(NDB_NAMESPACE):
-            zones = Zoneinfo.query().count()
+        zones = Zoneinfo.query(namespace=NDB_NAMESPACE).count()
         
         self.assertEqual(zones, EXPECT_ZONES)
 

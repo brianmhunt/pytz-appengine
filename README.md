@@ -13,11 +13,12 @@ performance issues but it has two issues:
    existing code (e.g. `icalendar`) must be patched.
 
 This project aims to resolve these issues by automatically building a `pytz` by
-downloading the latest version from the launchpad source and building a patched
-version.
+downloading the latest version from the
+[launchpad source](https://launchpad.net/pytz) and building a patched version.
 
 As well, instead of using the memcache version of gae-pytz, pytz-appengine will
-put the timezone information into the datastore with `ndb`.
+put the timezone information into the datastore with `ndb`. This may or may not
+confer a performance advantage.
 
 ## Installation and usage
 

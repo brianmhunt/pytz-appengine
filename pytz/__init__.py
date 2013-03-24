@@ -21,28 +21,6 @@ NDB_NAMESPACE = '.pytz'
 
 from google.appengine.ext import ndb
 
-# Namespaces
-# ~~~~~~~~~~
-# Decorator for accessing from within a given namespace
-# see eg. http://stackoverflow.com/questions/9296303
-from google.appengine.api import namespace_manager
-
-# A context for 'with' 
-class namespace_of(object):
-    """
-    Run the operations in this context in the given namespace
-    """
-    def __init__(self, namespace):
-        self.ns = namespace
-
-    def __enter__(self):
-        self.orig_ns = namespace_manager.get_namespace()
-        namespace_manager.set_namespace(self.ns)
-
-    def __exit__(self, type, value, traceback):
-        namespace_manager.set_namespace(self.orig_ns)
-
-
 class Zoneinfo(ndb.Model):
     """A model containing the zone info data
     """
@@ -61,30 +39,28 @@ def init_zoneinfo():
     zoneinfo_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
       'zoneinfo.zip'))
 
-    with namespace_of(NDB_NAMESPACE):
-        with ZipFile(zoneinfo_path) as zf:
-            for zfi in zf.filelist:
-                key = ndb.Key('Zoneinfo', zfi.filename)
-                zobj = Zoneinfo(key=key, data=zf.read(zfi))
-                zoneobjs.append(zobj)
+    with ZipFile(zoneinfo_path) as zf:
+        for zfi in zf.filelist:
+            key = ndb.Key('Zoneinfo', zfi.filename, namespace=NDB_NAMESPACE)
+            zobj = Zoneinfo(key=key, data=zf.read(zfi))
+            zoneobjs.append(zobj)
 
-        logging.info("Adding %d timezones to the pytz-appengine database" %
-            len(zoneobjs)
-            )
+    logging.info("Adding %d timezones to the pytz-appengine database" %
+        len(zoneobjs)
+        )
 
-        ndb.put_multi(zoneobjs)
+    ndb.put_multi(zoneobjs)
 
 def open_resource(name):
     """Load the object from the datastore"""
     import logging
     from cStringIO import StringIO
-    with namespace_of(NDB_NAMESPACE):
-      try:
-        data = ndb.Key('Zoneinfo', name).get().data
-      except AttributeError:
+    try:
+        data = ndb.Key('Zoneinfo', name, namespace=NDB_NAMESPACE).get().data
+    except AttributeError:
         # Missing zone info; test for GMT - which would be there if the 
         # Zoneinfo has been initialized.
-        if ndb.Key('Zoneinfo', 'GMT').get():
+        if ndb.Key('Zoneinfo', 'GMT', namespace=NDB_NAMESPACE).get():
           # the user asked for a zone that doesn't seem to exist.
           logging.exception("Requested zone '%s' is not in the database." %
               name)
@@ -114,7 +90,6 @@ def setup_module():
 
     _appengine_testbed = tb
 
-
 def teardown_module():
     """Any clean-up after each test"""
     global _appengine_testbed
@@ -124,6 +99,9 @@ def teardown_module():
 # >>>>>>>>>>>>>
 # >>>>>>>>>>>>>     end pytz-appengine augmentation
 # >>>>>>>>>>>>>
+#
+# The following shall be the canonical pytz/__init__.py, modified to remove
+# open_resource and resource_exists
 #
 '''
 datetime.tzinfo timezone definitions generated from the
