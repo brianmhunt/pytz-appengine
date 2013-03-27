@@ -78,8 +78,6 @@ def open_resource(name):
     """Load the object from the datastore"""
     from cStringIO import StringIO
     global is_gae
-    logging.error("Opening %s, gae: %s" % (name, is_gae))
-    raise Exception("WTFA")
 
     if not is_gae:
         # fallback to original
@@ -106,8 +104,7 @@ def resource_exists(name):
     """Return true if the given timezone resource exists.
     Since we are loading the whole PyTZ database, this should always be true
     """
-    global is_gae
-    if is_gae: return True
+    return True
 
     # fallback to original
     return __resource_exists(name)
