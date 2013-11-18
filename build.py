@@ -6,7 +6,7 @@ import os
 import shutil
 import argparse
 
-PYTZ_TMPLT = 'pytz-template'
+PYTZ_TMPLT = 'template'
 PYTZ_OUTPUT = 'pytz'
 
 LATEST_OLSON = '2013.8'
@@ -16,14 +16,15 @@ SRC_TEMPLATE = 'https://pypi.python.org/packages/source/p/pytz/pytz-{}.zip'
 
 DONE_TEXT = """
 
-    pytz for Google App Engine has been compiled from {source}.
+    The `pytz` for Google App Engine has been compiled,
+    from: `{source}`
 
     Testing
     ~~~~~~~
 
-    You can test this with a test-runner such as `nosetests`. It is a good
-    idea to set the log-level to INFO or higher and turning on color, for
-    example by running
+    You can test this with a test-runner such as `nosetests`.
+    It is a good idea to set the log-level to INFO or higher
+    and turning on color, for example by running:
 
        $ nosetests --rednose --logging-level=INFO
 
@@ -38,23 +39,25 @@ DONE_TEXT = """
     Usage
     ~~~~~
 
-    pytz should now work as it always has, but load the timezones from the ndb
-    datastore.
+    `pytz` should now work as it always has, but loading the timezones
+    from the ndb datastore.
 
-    If you update this package in your Google App Engine installation you
-    can refresh the timezones by running `pytz.init_zoneinfo()` or
-    alternatively by running in Google App Engine:
+    If you update this package in your Google App Engine installation
+    you can refresh the timezones by running `pytz.init_zoneinfo()`
+    or alternatively by running in Google App Engine:
 
        ndb.Key('Zoneinfo', 'GMT', namespace='.pytz').delete()
        pytz.timezone('GMT')
 
-    This will cause the zoneinfo to be refreshed. Note that deleted timezones
-    will not be removed from the database (but they probably should).
+    This will cause the zoneinfo to be refreshed.
+
+    Note that deleted timezones will not be removed from the database
+    (but they probably should).
 """
 
 
 def download(args):
-    "Get the latest pytz"
+    """Get the latest pytz"""
     import urllib
     source = SRC_TEMPLATE.format(args.olson)
     dest = os.path.basename(source)
@@ -68,7 +71,7 @@ def download(args):
 
 
 def compile(args):
-    """"Create a 'pytz' directory and create the appengine-compatible module.
+    """Create a 'pytz' directory and create the appengine-compatible module.
 
     Copy over the bare minimum Python files (pytz/*.py) and put the zonefiles
     into a zip file.

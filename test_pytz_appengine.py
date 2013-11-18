@@ -1,5 +1,5 @@
 """
-Test the appengine-specific components
+Test the pytz-appengine specific components
 """
 
 import pytz
@@ -9,11 +9,11 @@ import unittest
 
 class pytzAppengineTest(unittest.TestCase):
     """
-    Check that loading works as expected and we see the appropriate model
-    instances
+    Check that loading works as expected
+    and that we see the appropriate model instances
     """
     def test_pytz_appengine(self):
-        "ensure we are using pytz-appengine"
+        """Check that pytz-appengine is used"""
         self.assertTrue(pytz.APPENGINE_PYTZ)
 
     def test_zones(self):
