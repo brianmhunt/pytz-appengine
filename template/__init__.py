@@ -21,10 +21,12 @@ NDB_NAMESPACE = '.pytz'
 
 from google.appengine.ext import ndb
 
+
 class Zoneinfo(ndb.Model):
     """A model containing the zone info data
     """
     data = ndb.BlobProperty(compressed=True)
+
 
 def init_zoneinfo():
     """
@@ -32,12 +34,13 @@ def init_zoneinfo():
 
     This must be called before the AppengineTimezoneLoader will work.
     """
-    import os, logging
+    import os
+    import logging
     from zipfile import ZipFile
     zoneobjs = []
 
-    zoneinfo_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
-      'zoneinfo.zip'))
+    zoneinfo_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), 'zoneinfo.zip'))
 
     with ZipFile(zoneinfo_path) as zf:
         for zfi in zf.filelist:
@@ -45,11 +48,12 @@ def init_zoneinfo():
             zobj = Zoneinfo(key=key, data=zf.read(zfi))
             zoneobjs.append(zobj)
 
-    logging.info("Adding %d timezones to the pytz-appengine database" %
-        len(zoneobjs)
-        )
+    logging.info(
+        "Adding %d timezones to the pytz-appengine database" %
+        len(zoneobjs))
 
     ndb.put_multi(zoneobjs)
+
 
 def open_resource(name):
     """Load the object from the datastore"""
@@ -58,13 +62,13 @@ def open_resource(name):
     try:
         data = ndb.Key('Zoneinfo', name, namespace=NDB_NAMESPACE).get().data
     except AttributeError:
-        # Missing zone info; test for GMT - which would be there if the 
-        # Zoneinfo has been initialized.
+        # Missing zone info; test for GMT
+        # which would be there if the Zoneinfo has been initialized.
         if ndb.Key('Zoneinfo', 'GMT', namespace=NDB_NAMESPACE).get():
-          # the user asked for a zone that doesn't seem to exist.
-          logging.exception("Requested zone '%s' is not in the database." %
-              name)
-          raise
+            # the user asked for a zone that doesn't seem to exist.
+            logging.exception(
+                "Requested zone '%s' is not in the database." % name)
+            raise
 
         # we need to initialize the database
         init_zoneinfo()
@@ -72,11 +76,13 @@ def open_resource(name):
 
     return StringIO(data)
 
+
 def resource_exists(name):
     """Return true if the given timezone resource exists.
     Since we are loading the whole PyTZ database, this should always be true
     """
     return True
+
 
 def setup_module():
     """Set up tests (used by e.g. nosetests) for the module - loaded once"""
@@ -90,6 +96,7 @@ def setup_module():
 
     _appengine_testbed = tb
 
+
 def teardown_module():
     """Any clean-up after each test"""
     global _appengine_testbed
@@ -100,8 +107,8 @@ def teardown_module():
 # >>>>>>>>>>>>>     end pytz-appengine augmentation
 # >>>>>>>>>>>>>
 #
-# The following shall be the canonical pytz/__init__.py, modified to remove
-# open_resource and resource_exists
+# The following shall be the canonical pytz/__init__.py
+# modified to remove open_resource and resource_exists
 #
 '''
 datetime.tzinfo timezone definitions generated from the
@@ -114,11 +121,9 @@ on how to use these modules.
 '''
 
 # The Olson database is updated several times a year.
-OLSON_VERSION = '2013b'
-VERSION = OLSON_VERSION
-# Version format for a patch release - only one so far.
-#VERSION = OLSON_VERSION + '.2'
-__version__ = OLSON_VERSION
+OLSON_VERSION = '2013h'
+VERSION = '2013.8'  # Switching to pip compatible version numbering.
+__version__ = VERSION
 
 OLSEN_VERSION = OLSON_VERSION # Old releases had this misspelling
 
@@ -131,10 +136,6 @@ __all__ = [
     ]
 
 import sys, datetime, os.path, gettext
-try:
-    from UserDict import DictMixin
-except ImportError:
-    from collections import Mapping as DictMixin
 
 try:
     from pkg_resources import resource_stream
@@ -145,6 +146,7 @@ from pytz.exceptions import AmbiguousTimeError
 from pytz.exceptions import InvalidTimeError
 from pytz.exceptions import NonExistentTimeError
 from pytz.exceptions import UnknownTimeZoneError
+from pytz.lazy import LazyDict, LazyList, LazySet
 from pytz.tzinfo import unpickler
 from pytz.tzfile import build_tzinfo, _byte_string
 
@@ -397,36 +399,8 @@ def _p(*args):
 _p.__safe_for_unpickling__ = True
 
 
-class _LazyDict(DictMixin):
-    """Dictionary populated on first use."""
-    data = None
-    def __getitem__(self, key):
-        if self.data is None:
-            self._fill()
-        return self.data[key.upper()]
 
-    def __contains__(self, key):
-        if self.data is None:
-            self._fill()
-        return key in self.data
-
-    def __iter__(self):
-        if self.data is None:
-            self._fill()
-        return iter(self.data)
-
-    def __len__(self):
-        if self.data is None:
-            self._fill()
-        return len(self.data)
-
-    def keys(self):
-        if self.data is None:
-            self._fill()
-        return self.data.keys()
-
-
-class _CountryTimezoneDict(_LazyDict):
+class _CountryTimezoneDict(LazyDict):
     """Map ISO 3166 country code to a list of timezone names commonly used
     in that country.
 
@@ -484,7 +458,7 @@ class _CountryTimezoneDict(_LazyDict):
 country_timezones = _CountryTimezoneDict()
 
 
-class _CountryNameDict(_LazyDict):
+class _CountryNameDict(LazyDict):
     '''Dictionary proving ISO3166 code -> English name.
 
     >>> print(country_names['au'])
@@ -1204,10 +1178,10 @@ all_timezones = \
  'W-SU',
  'WET',
  'Zulu']
-all_timezones = [
-        tz for tz in all_timezones if resource_exists(tz)]
+all_timezones = LazyList(
+        tz for tz in all_timezones if resource_exists(tz))
         
-all_timezones_set = set(all_timezones)
+all_timezones_set = LazySet(all_timezones)
 common_timezones = \
 ['Africa/Abidjan',
  'Africa/Accra',
@@ -1389,7 +1363,6 @@ common_timezones = \
  'America/Santo_Domingo',
  'America/Sao_Paulo',
  'America/Scoresbysund',
- 'America/Shiprock',
  'America/Sitka',
  'America/St_Barthelemy',
  'America/St_Johns',
@@ -1417,7 +1390,6 @@ common_timezones = \
  'Antarctica/McMurdo',
  'Antarctica/Palmer',
  'Antarctica/Rothera',
- 'Antarctica/South_Pole',
  'Antarctica/Syowa',
  'Antarctica/Vostok',
  'Arctic/Longyearbyen',
@@ -1642,7 +1614,7 @@ common_timezones = \
  'US/Mountain',
  'US/Pacific',
  'UTC']
-common_timezones = [
-        tz for tz in common_timezones if tz in all_timezones]
+common_timezones = LazyList(
+            tz for tz in common_timezones if tz in all_timezones)
         
-common_timezones_set = set(common_timezones)
+common_timezones_set = LazySet(common_timezones)

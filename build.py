@@ -6,22 +6,26 @@ import os
 import shutil
 import argparse
 
-LATEST_OLSON = "2013b"
+PYTZ_OUTPUT = 'pytz'
+
+LATEST_OLSON = '2013.8'
 #
 # TODO: Slurp the latest URL from the pypi downloads page
 SRC_TEMPLATE = "https://pypi.python.org/packages/source/p/pytz/pytz-{}.zip"
 
 DONE_TEXT = """
-    
-    pytz for Google App Engine has been compiled from {source}.
+
+    The `pytz` for Google App Engine has been compiled,
+    from: `{source}`
 
     Testing
     ~~~~~~~
 
-    You can test this with a test-runner such as `nosetests`. It is a good
-    idea to set the log-level to INFO or higher and turning on color, for
-    example by running
+    You can test this with a test-runner such as `nosetests`.
+    It is a good idea to set the log-level to INFO or higher
+    and turning on color, for example by running:
 
+       $ cd pytz
        $ nosetests --rednose --logging-level=INFO
 
     Installation
@@ -34,24 +38,26 @@ DONE_TEXT = """
 
     Usage
     ~~~~~
-    
-    pytz should now work as it always has, but load the timezones from the ndb
-    datastore.
 
-    If you update this package in your Google App Engine installation you
-    can refresh the timezones by running `pytz.init_zoneinfo()` or
-    alternatively by running in Google App Engine:
-    
+    `pytz` should now work as it always has, but loading the timezones
+    from the ndb datastore.
+
+    If you update this package in your Google App Engine installation
+    you can refresh the timezones by running `pytz.init_zoneinfo()`
+    or alternatively by running in Google App Engine:
+
        ndb.Key('Zoneinfo', 'GMT', namespace='.pytz').delete()
        pytz.timezone('GMT')
 
-    This will cause the zoneinfo to be refreshed. Note that deleted timezones
-    will not be removed from the database (but they probably should).
+    This will cause the zoneinfo to be refreshed.
+
+    Note that deleted timezones will not be removed from the database
+    (but they probably should).
 """
 
 
 def download(args):
-    "Get the latest pytz"
+    """Get the latest pytz"""
     import urllib
     source = SRC_TEMPLATE.format(args.olson)
     dest = os.path.basename(source)
@@ -65,7 +71,7 @@ def download(args):
 
 
 def compile(args):
-    """"Create a 'pytz' directory and create the appengine-compatible module.
+    """Create a 'pytz' directory and create the appengine-compatible module.
 
     Copy over the bare minimum Python files (pytz/*.py) and put the zonefiles
     into a zip file.
@@ -88,15 +94,18 @@ def compile(args):
     with ZipFile(source, 'r') as zf:
 
         # copy the source
-        for zip_file_obj in (zfi for zfi in zf.filelist 
-                if "/pytz/" in zfi.filename 
+        for zip_file_obj in (
+                zfi for zfi in zf.filelist
+                if "/pytz/" in zfi.filename
                 and zfi.filename.endswith(".py")):
-            filename = zip_file_obj.filename # full path in the zip
+            filename = zip_file_obj.filename  # full path in the zip
 
             if 'test_' in filename:
-                out_filename = '%s/%s' % (tests_dir, os.path.basename(filename))
+                out_filename = '%s/%s' % (
+                    tests_dir, os.path.basename(filename))
             else:
-                out_filename = "%s/%s" % (build_dir, os.path.basename(filename))
+                out_filename = "%s/%s" % (
+                    build_dir, os.path.basename(filename))
 
             if not os.path.exists(os.path.dirname(out_filename)):
                 os.mkdir(os.path.dirname(out_filename))
@@ -104,11 +113,12 @@ def compile(args):
             with open(out_filename, 'w') as outfile:
                 print "Copying %s" % out_filename
                 outfile.write(zf.read(zip_file_obj))
-        
+
         # copy the zoneinfo to a new zip file
         with ZipFile(zone_file, "w", ZIP_DEFLATED) as out_zones:
-            zonefiles = [zfi for zfi in zf.filelist if "/pytz/zoneinfo" in
-                    zfi.filename]
+            zonefiles = [
+                zfi for zfi in zf.filelist
+                if "/pytz/zoneinfo" in zfi.filename]
             prefix = os.path.commonprefix([zfi.filename for zfi in zonefiles])
             for zip_file_obj in zonefiles:
                 # the destination zip will contain only the contents of the
@@ -118,14 +128,14 @@ def compile(args):
                 out_filename = os.path.relpath(zip_file_obj.filename, prefix)
                 # print "Writing %s to %s" % (out_filename, zone_file)
                 out_zones.writestr(out_filename, zf.read(zip_file_obj))
-            print "Created %s and added %s timezones" % (zone_file,
-                    len(zonefiles))
+            print "Created %s and added %s timezones" % (
+                  zone_file, len(zonefiles))
 
     print "Copying test file test_pytz_appengine.py to %s" % tests_dir
     shutil.copy("test_pytz_appengine.py", tests_dir)
 
-    print "Files copied from %s to the %s directory" % (source,
-            build_dir)
+    print "Files copied from %s to the %s directory" % (
+          source, build_dir)
 
     print "Augmenting %s/__init__.py with gae-loader.py" % build_dir
 
@@ -136,10 +146,10 @@ def compile(args):
         original_init = original.read()
 
     # rename open_resource and resource_exists, since we are hacking our own
-    original_init = original_init.replace("def open_resource(name):",
-        "def __open_resource(name):")
-    original_init = original_init.replace("def resource_exists(name):",
-        "def __resource_exists(name):")
+    original_init = original_init.replace(
+        "def open_resource(name):", "def __open_resource(name):")
+    original_init = original_init.replace(
+        "def resource_exists(name):", "def __resource_exists(name):")
 
     with open(init_file, "w") as init_out:
         with open(loader_file) as loader_in:
@@ -172,29 +182,32 @@ def clean(args):
 
 
 def all(args):
-    "Download and compile."
+    """Download and compile."""
     download(args)
     compile(args)
 
-commands = dict(
-        all=all,
-        download=download,
-        compile=compile,
-        clean=clean,
-        )
+
+commands = dict(all=all,
+                download=download,
+                compile=compile,
+                clean=clean,
+                )
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Update the pytz.')
 
-    parser.add_argument('--olson', dest='olson', default=LATEST_OLSON,
-            help='The version of the pytz to use')
+    parser.add_argument(
+        '--olson', dest='olson', default=LATEST_OLSON,
+        help='The version of the pytz to use')
 
-    parser.add_argument('--build', dest='build', default='pytz',
-            help='The build directory where the updated pytz will be stored')
+    parser.add_argument(
+        '--build', dest='build', default=PYTZ_OUTPUT,
+        help='The build directory where the updated pytz will be stored')
 
-    parser.add_argument('command', help='Action to perform',
-            choices=commands.keys())
+    parser.add_argument(
+        'command', help='Action to perform',
+        choices=commands.keys())
 
     args = parser.parse_args()
 

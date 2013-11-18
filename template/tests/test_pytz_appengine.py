@@ -1,17 +1,19 @@
 """
-Test the appengine-specific components
+Test the pytz-appengine specific components
 """
+
 import pytz
 import logging
 import unittest
 
+
 class pytzAppengineTest(unittest.TestCase):
     """
-    Check that loading works as expected and we see the appropriate model
-    instances
+    Check that loading works as expected
+    and that we see the appropriate model instances
     """
     def test_pytz_appengine(self):
-        "ensure we are using pytz-appengine"
+        """Check that pytz-appengine is used"""
         self.assertTrue(pytz.APPENGINE_PYTZ)
 
     def test_zones(self):
@@ -23,13 +25,8 @@ class pytzAppengineTest(unittest.TestCase):
 
         logging.error(est)
 
-        EXPECT_ZONES = 589 # this may change with each iteration
+        EXPECT_ZONES = 589  # this may change with each iteration
 
         zones = Zoneinfo.query(namespace=NDB_NAMESPACE).count()
-        
+
         self.assertEqual(zones, EXPECT_ZONES)
-
-        
-
-
-
