@@ -6,10 +6,13 @@ import os
 import shutil
 import argparse
 
-LATEST_OLSON = "2013b"
+PYTZ_TMPLT = 'pytz-template'
+PYTZ_OUTPUT = 'pytz'
+
+LATEST_OLSON = '2013.8'
 #
 # TODO: Slurp the latest URL from the pypi downloads page
-SRC_TEMPLATE = "https://pypi.python.org/packages/source/p/pytz/pytz-{}.zip"
+SRC_TEMPLATE = 'https://pypi.python.org/packages/source/p/pytz/pytz-{}.zip'
 
 DONE_TEXT = """
     
@@ -190,7 +193,7 @@ if __name__ == '__main__':
     parser.add_argument('--olson', dest='olson', default=LATEST_OLSON,
             help='The version of the pytz to use')
 
-    parser.add_argument('--build', dest='build', default='pytz',
+    parser.add_argument('--build', dest='build', default=PYTZ_OUTPUT,
             help='The build directory where the updated pytz will be stored')
 
     parser.add_argument('command', help='Action to perform',
