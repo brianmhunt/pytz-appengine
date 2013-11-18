@@ -1,9 +1,11 @@
 """
 Test the appengine-specific components
 """
+
 import pytz
 import logging
 import unittest
+
 
 class pytzAppengineTest(unittest.TestCase):
     """
@@ -23,13 +25,8 @@ class pytzAppengineTest(unittest.TestCase):
 
         logging.error(est)
 
-        EXPECT_ZONES = 589 # this may change with each iteration
+        EXPECT_ZONES = 589  # this may change with each iteration
 
         zones = Zoneinfo.query(namespace=NDB_NAMESPACE).count()
-        
+
         self.assertEqual(zones, EXPECT_ZONES)
-
-        
-
-
-
