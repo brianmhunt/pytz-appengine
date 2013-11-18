@@ -6,13 +6,12 @@ import os
 import shutil
 import argparse
 
-PYTZ_TMPLT = 'template'
 PYTZ_OUTPUT = 'pytz'
 
 LATEST_OLSON = '2013.8'
 #
 # TODO: Slurp the latest URL from the pypi downloads page
-SRC_TEMPLATE = 'https://pypi.python.org/packages/source/p/pytz/pytz-{}.zip'
+SRC_TEMPLATE = "https://pypi.python.org/packages/source/p/pytz/pytz-{}.zip"
 
 DONE_TEXT = """
 
@@ -26,6 +25,7 @@ DONE_TEXT = """
     It is a good idea to set the log-level to INFO or higher
     and turning on color, for example by running:
 
+       $ cd pytz
        $ nosetests --rednose --logging-level=INFO
 
     Installation
@@ -182,9 +182,10 @@ def clean(args):
 
 
 def all(args):
-    "Download and compile."
+    """Download and compile."""
     download(args)
     compile(args)
+
 
 commands = dict(all=all,
                 download=download,
