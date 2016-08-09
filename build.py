@@ -3,6 +3,7 @@
 Download and patch the latest version of pytz
 """
 import os
+import os.path
 import shutil
 import argparse
 
@@ -59,7 +60,10 @@ DONE_TEXT = """
 def download(args):
     """Get the latest pytz"""
     import urllib
-    source = SRC_TEMPLATE.format(args.olson)
+    if args.release_url:
+        source = args.release_url
+    else:
+        source = SRC_TEMPLATE.format(args.olson)
     dest = os.path.basename(source)
     print "Downloading %s" % source
 
@@ -78,7 +82,10 @@ def compile(args):
     """
     from zipfile import ZipFile, ZIP_DEFLATED
 
-    source = os.path.basename(SRC_TEMPLATE.format(args.olson))
+    if args.release_url:
+        source = os.path.basename(args.release_url)
+    else:
+        source = os.path.basename(SRC_TEMPLATE.format(args.olson))
     build_dir = args.build
     tests_dir = os.path.join(build_dir, 'tests')
     zone_file = os.path.join(build_dir, "zoneinfo.zip")
@@ -158,6 +165,16 @@ def compile(args):
         # append the original __init__
         init_out.write(original_init)
 
+    if args.dir:
+        print 'Automatically moving pytz...'
+
+        destination_pytz = os.path.join(args.dir, 'pytz')
+
+        if os.path.isdir(destination_pytz):
+            shutil.rmtree(destination_pytz, ignore_errors=True)
+
+        shutil.move('pytz', destination_pytz)
+
     print DONE_TEXT.format(source=source, build_dir=build_dir)
 
 
@@ -200,6 +217,14 @@ if __name__ == '__main__':
     parser.add_argument(
         '--olson', dest='olson', default=LATEST_OLSON,
         help='The version of the pytz to use')
+
+    parser.add_argument(
+        '--release-url', dest='release_url',
+        help='Explicit pytz release zip URL to download. Overrides --olson')
+
+    parser.add_argument(
+        '--dir', dest='dir',
+        help='The directory to move the patched pytz to')
 
     parser.add_argument(
         '--build', dest='build', default=PYTZ_OUTPUT,
