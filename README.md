@@ -1,6 +1,9 @@
 PYTZ - Appengine
 ================
 
+### Note: As of Dec 1, 2016, AppEngine appears to natively include pytz 2016.4.
+
+
 Python Timezone for Google App Engine.
 
 There are some issues with pytz on Google App Engine, mostly performance related.
